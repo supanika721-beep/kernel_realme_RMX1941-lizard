@@ -1,0 +1,67 @@
+name: Build Kernel Realme C2 Docker-Ready
+
+on:
+  workflow_dispatch: # Menjalankan manual dari tab Actions
+
+jobs:
+  build_kernel:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Install Build Essentials
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc build-essential git gcc-arm-linux-gnueabi xz-utils libssl-dev libncurses5-dev flex bison
+
+      - name: Clone Source & Toolchain
+        run: |
+          # Clone kernel Lizard untuk RMX1941
+          git clone --depth=1 https://github.com -b main kernel
+          
+          # Clone Toolchain GCC 4.9 (Standar kernel lama MediaTek)
+          git clone --depth=1 https://github.com gcc-arm
+          git clone --depth=1 https://github.com gcc-arm64
+
+      - name: Patch Defconfig for Docker & Networking
+        run: |
+          DEFCONFIG="kernel/arch/arm64/configs/RMX1941_defconfig"
+          
+          # Aktifkan fitur Docker
+          echo "CONFIG_NAMESPACES=y" >> $DEFCONFIG
+          echo "CONFIG_NET_NS=y" >> $DEFCONFIG
+          echo "CONFIG_PID_NS=y" >> $DEFCONFIG
+          echo "CONFIG_IPC_NS=y" >> $DEFCONFIG
+          echo "CONFIG_UTS_NS=y" >> $DEFCONFIG
+          echo "CONFIG_CGROUPS=y" >> $DEFCONFIG
+          echo "CONFIG_CGROUP_CPUACCT=y" >> $DEFCONFIG
+          echo "CONFIG_CGROUP_DEVICE=y" >> $DEFCONFIG
+          echo "CONFIG_CGROUP_FREEZER=y" >> $DEFCONFIG
+          echo "CONFIG_CGROUP_SCHED=y" >> $DEFCONFIG
+          echo "CONFIG_CPUSETS=y" >> $DEFCONFIG
+          echo "CONFIG_MEMCG=y" >> $DEFCONFIG
+          echo "CONFIG_OVERLAY_FS=y" >> $DEFCONFIG
+          echo "CONFIG_VETH=y" >> $DEFCONFIG
+          echo "CONFIG_BRIDGE=y" >> $DEFCONFIG
+          
+          # Matikan Paranoid Network agar Docker bisa akses internet
+          sed -i 's/CONFIG_ANDROID_PARANOID_NETWORK=y/CONFIG_ANDROID_PARANOID_NETWORK=n/g' $DEFCONFIG
+          echo "# CONFIG_ANDROID_PARANOID_NETWORK is not set" >> $DEFCONFIG
+
+      - name: Compile Kernel
+        run: |
+          cd kernel
+          export ARCH=arm64
+          export CROSS_COMPILE=$(pwd)/../gcc-arm64/bin/aarch64-linux-android-
+          export CROSS_COMPILE_ARM32=$(pwd)/../gcc-arm/bin/arm-linux-androideabi-
+          
+          # Masak kernel
+          make RMX1941_defconfig
+          make -j$(nproc --all)
+
+      - name: Upload Kernel Image
+        uses: actions/upload-artifact@v3
+        with:
+          name: Kernel_RMX1941_Docker
+          path: kernel/arch/arm64/boot/Image.gz-dtb
