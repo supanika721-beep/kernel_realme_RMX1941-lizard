@@ -15,11 +15,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc build-essential git gcc-arm-linux-gnueabi xz-utils libssl-dev libncurses5-dev flex bison
 
-      - name: Clone Source & Toolchain
+      - name: Clone Toolchain
         run: |
-          # Clone kernel Lizard untuk RMX1941
-          git clone --depth=1 https://github.com -b main kernel
-          
           # Clone Toolchain GCC 4.9 (Standar kernel lama MediaTek)
           git clone --depth=1 https://github.com gcc-arm
           git clone --depth=1 https://github.com gcc-arm64
@@ -53,8 +50,8 @@ jobs:
         run: |
           cd kernel
           export ARCH=arm64
-          export CROSS_COMPILE=$(pwd)/../gcc-arm64/bin/aarch64-linux-android-
-          export CROSS_COMPILE_ARM32=$(pwd)/../gcc-arm/bin/arm-linux-androideabi-
+          export CROSS_COMPILE=$(pwd)/gcc-arm64/bin/aarch64-linux-android-
+          export CROSS_COMPILE_ARM32=$(pwd)/gcc-arm/bin/arm-linux-androideabi-
           
           # Masak kernel
           make RMX1941_defconfig
