@@ -17,10 +17,12 @@ jobs:
 
       - name: Clone Toolchain
         run: |
-          # Clone Toolchain GCC 4.9 (Standar kernel lama MediaTek)
-          git clone --depth=1 https://github.com gcc-arm
-          git clone --depth=1 https://github.com gcc-arm64
-
+          # Toolchain GCC 4.9 untuk ARM32 (Penting buat kernel MediaTek)
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 -b lineage-17.1 gcc-arm
+          
+          # Toolchain GCC 4.9 untuk AARCH64 (Pastikan link ini benar)
+          git clone --depth=1 https://github.com -b lineage-17.1 gcc-arm64
+          
       - name: Patch Defconfig for Docker & Networking
         run: |
           DEFCONFIG="kernel/arch/arm64/configs/RMX1941_defconfig"
